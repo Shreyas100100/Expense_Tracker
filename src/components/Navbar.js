@@ -192,6 +192,13 @@ export default function Navbar() {
               >
                 Customers
               </Button>
+              <Button
+                component={Link}
+                to="/Payment"
+                sx={{ my: 2, color: "white", display: "block" }}
+              >
+                Payment
+              </Button>
             </Box>
 
             <Box sx={{ flexGrow: 0 }}>

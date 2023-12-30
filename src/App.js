@@ -15,7 +15,7 @@ import AddItems from './pages/AddItems';
 import Menu from './pages/Menu';
 import Bills from './pages/Bills';
 import TodayBills from './pages/TodayBills';
-
+import Payment from './pages/Payment';
 function App() {
   const [user, setUser] = useState(null);
 
@@ -45,6 +45,8 @@ function App() {
           {user ? (
             <>
               <Route path="/addusers" element={<AddUsers />} />
+              <Route path="/payment" element={<Payment />} />
+
               <Route path="/bills" element={<Bills />} />
               <Route path="/todaybills" element={<TodayBills />} />
               <Route path="/menu" element={<Menu />} />

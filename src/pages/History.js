@@ -1,7 +1,4 @@
-// History.js
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs } from 'firebase/firestore';
-import { db } from '../firebase';
 import {
   Box,
   Typography,
@@ -21,9 +18,12 @@ import {
   DialogActions,
   Button,
 } from '@mui/material';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '../firebase';
 
 const History = () => {
   const [bills, setBills] = useState([]);
+  const [acceptedPayments, setAcceptedPayments] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [selectedCustomer, setSelectedCustomer] = useState('');
   const [selectedMonth, setSelectedMonth] = useState('');
@@ -33,8 +33,14 @@ const History = () => {
   useEffect(() => {
     const fetchBills = async () => {
       const billsSnapshot = await getDocs(collection(db, 'bills'));
-      const billsData = billsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const billsData = billsSnapshot.docs.map(doc => ({ id: doc.id, type: 'bill', ...doc.data() }));
       setBills(billsData);
+    };
+
+    const fetchAcceptedPayments = async () => {
+      const paymentsSnapshot = await getDocs(collection(db, 'AcceptedPayments'));
+      const paymentsData = paymentsSnapshot.docs.map(doc => ({ id: doc.id, type: 'payment', ...doc.data() }));
+      setAcceptedPayments(paymentsData);
     };
 
     const fetchCustomers = async () => {
@@ -44,6 +50,7 @@ const History = () => {
     };
 
     fetchBills();
+    fetchAcceptedPayments();
     fetchCustomers();
   }, []);
 
@@ -56,22 +63,36 @@ const History = () => {
   };
 
   const handleOpenDialog = customerId => {
+    const customerData = customers.find(customer => customer.id === customerId);
+
     const customerBills = bills
       .filter(
         bill =>
           (selectedCustomer ? bill.customerId === selectedCustomer : true) &&
           (selectedMonth
             ? new Date(bill.date.seconds * 1000).getMonth() + 1 === parseInt(selectedMonth)
-            : true)
-      )
-      .filter(bill => bill.customerId === customerId);
+            : true) &&
+          bill.customerId === customerId
+      );
 
-    const customerHistoryData = customerBills.map(bill => ({
-      date: new Date(bill.date.seconds * 1000).toLocaleString(),
-      itemName: bill.itemName,
-      quantity: bill.quantity,
-      total: bill.billAmount.toFixed(2),
-    }));
+    const customerPayments = acceptedPayments.filter(payment => payment.customerId === customerId);
+
+    const customerHistoryData = [
+      ...customerBills.map(bill => ({
+        type: 'bill',
+        date: new Date(bill.date.seconds * 1000).toLocaleString(),
+        itemName: bill.itemName,
+        quantity: bill.quantity,
+        total: bill.billAmount.toFixed(2),
+      })),
+      ...customerPayments.map(payment => ({
+        type: 'payment',
+        date: new Date(payment.datetime.seconds * 1000).toLocaleString(),
+        itemName: 'Payment Received',
+        quantity: '1',
+        total: `-${payment.amountReceived.toFixed(2)}`,
+      })),
+    ];
 
     setCustomerHistory(customerHistoryData);
     setOpenDialog(true);
@@ -92,7 +113,11 @@ const History = () => {
       )
       .reduce((total, bill) => total + bill.billAmount, 0);
 
-    return monthlyTotal.toFixed(2);
+    const monthlyPayments = acceptedPayments
+      .filter(payment => payment.customerId === customerId)
+      .reduce((total, payment) => total + payment.amountReceived, 0);
+
+    return (monthlyTotal + monthlyPayments).toFixed(2);
   };
 
   return (
