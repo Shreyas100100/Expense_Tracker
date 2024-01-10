@@ -1,6 +1,6 @@
 {
-  "homepage":"https://shreyas100100.github.io/expense_tracker",
   "name": "expense_tracker",
+  "homepage":"https://shreyas100100.github.io/expense_tracker",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
