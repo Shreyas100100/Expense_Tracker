@@ -52,16 +52,16 @@ export default function Navbar() {
       <AppBar position="static">
         <Container maxWidth="xl">
           <Toolbar disableGutters>
-            <Typography
+          <Typography
               variant="h6"
               noWrap
-              component="a"
-              href="/"
+              component={Link}
+              to="/"
               sx={{
-                mr: 25,
-                display: { xs: "none", md: "flex" },
+                flexGrow: 1,
                 color: "inherit",
                 textDecoration: "none",
+                textAlign: { xs: "center", md: "left" },
               }}
             >
               EXPENSE TRACKER
@@ -83,12 +83,12 @@ export default function Navbar() {
                 anchorEl={anchorElNav}
                 anchorOrigin={{
                   vertical: "bottom",
-                  horizontal: "left",
+                  horizontal: "right", // Change from "left" to "right" for mobile view
                 }}
                 keepMounted
                 transformOrigin={{
                   vertical: "top",
-                  horizontal: "left",
+                  horizontal: "right",
                 }}
                 open={Boolean(anchorElNav)}
                 onClose={handleCloseNavMenu}

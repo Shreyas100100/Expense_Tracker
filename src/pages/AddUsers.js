@@ -1,4 +1,3 @@
-// AddUsers.js
 import React from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { TextField, Button, Snackbar, Box } from '@mui/material';
@@ -15,14 +14,13 @@ const AddUsers = () => {
   const onSubmit = async (data) => {
     try {
       const docRef = await addDoc(collection(db, 'customers'), {
-        customerId: '', // Leave it empty to auto-generate a unique ID
+        customerId: '',
         customerName: data.customerName,
         shopNo: data.shopNo,
         phoneNumber: data.phoneNumber,
         billAmount: 0,
       });
 
-      // Update the document with the auto-generated ID
       await updateDoc(doc(db, 'customers', docRef.id), {
         customerId: docRef.id,
       });
@@ -57,6 +55,7 @@ const AddUsers = () => {
         border: '1px solid #ccc',
         borderRadius: 4,
         boxShadow: 1,
+        textAlign: 'center',
       }}
     >
       <form onSubmit={handleSubmit(onSubmit)}>
@@ -118,7 +117,19 @@ const AddUsers = () => {
           )}
         />
 
-        <Button type="submit" variant="contained" color="primary" sx={{ marginTop: 2 }}>
+        <Button
+          type="submit"
+          variant="contained"
+          color="primary"
+          sx={{
+            marginTop: 2,
+            backgroundColor: 'black',
+            color: 'white',
+            '&:hover': {
+              backgroundColor: '#333', // Darken the background color on hover
+            },
+          }}
+        >
           Submit
         </Button>
 

@@ -1,4 +1,3 @@
-// Import necessary libraries and components
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
@@ -16,17 +15,23 @@ import Menu from './pages/Menu';
 import Bills from './pages/Bills';
 import TodayBills from './pages/TodayBills';
 import Payment from './pages/Payment';
+
+function Home() {
+  return (
+    <div>
+      <h2>Welcome to the Home Page</h2>
+      {/* Add any content for the home page */}
+    </div>
+  );
+}
+
 function App() {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
     // Set up Firebase authentication listener
     const unsubscribe = auth.onAuthStateChanged((user) => {
-      if (user) {
-        setUser(user);
-      } else {
-        setUser(null);
-      }
+      setUser(user);
     });
 
     // Cleanup function
@@ -38,27 +43,37 @@ function App() {
   return (
     <div className="App">
       <Router>
-        {user && <Navbar />}
         <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          {user ? (
-            <>
-              <Route path="/addusers" element={<AddUsers />} />
-              <Route path="/payment" element={<Payment />} />
-
-              <Route path="/bills" element={<Bills />} />
-              <Route path="/todaybills" element={<TodayBills />} />
-              <Route path="/menu" element={<Menu />} />
-              <Route path="/additems" element={<AddItems />} />
-              <Route path="/addbill" element={<AddBill />} />
-              <Route path="/history" element={<History />} />
-              <Route path="/blog" element={<Blog />} />
-              <Route path="/customers" element={<Customers />} />
-            </>
-          ) : (
-            <Route path="*" element={<Navigate to="/home" />} />
-          )}
+          <Route
+            path="/*"
+            element={
+              user ? (
+                <>
+                  <Navbar />
+                  <Routes>
+                    <Route path="/" element={<Home />} />
+                    <Route path="/addusers" element={<AddUsers />} />
+                    <Route path="/payment" element={<Payment />} />
+                    <Route path="/bills" element={<Bills />} />
+                    <Route path="/todaybills" element={<TodayBills />} />
+                    <Route path="/menu" element={<Menu />} />
+                    <Route path="/additems" element={<AddItems />} />
+                    <Route path="/addbill" element={<AddBill />} />
+                    <Route path="/history" element={<History />} />
+                    <Route path="/blog" element={<Blog />} />
+                    <Route path="/customers" element={<Customers />} />
+                    <Route path="/*" element={<Navigate to="/" />} />
+                  </Routes>
+                </>
+              ) : (
+                <Routes>
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/signup" element={<Signup />} />
+                  <Route path="/*" element={<Navigate to="/login" />} />
+                </Routes>
+              )
+            }
+          />
         </Routes>
       </Router>
     </div>
