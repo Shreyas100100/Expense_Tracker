@@ -38,10 +38,28 @@ const Payment = () => {
     fetchCustomers();
   }, []);
 
-  const handleCustomerChange = (event) => {
-    setSelectedCustomer(event.target.value);
-    const selectedCustomerData = customers.find((customer) => customer.id === event.target.value);
-    setBillDue(selectedCustomerData ? selectedCustomerData.billAmount : 0);
+  const handleCustomerChange = async (event) => {
+    const customerId = event.target.value;
+    setSelectedCustomer(customerId);
+    
+    const selectedCustomerData = customers.find((customer) => customer.id === customerId);
+    if (selectedCustomerData) {
+      const billsSnapshot = await getDocs(collection(db, 'bills'));
+      const billsData = billsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+      const acceptedPaymentsSnapshot = await getDocs(collection(db, 'AcceptedPayments'));
+      const acceptedPaymentsData = acceptedPaymentsSnapshot.docs.map(doc => doc.data());
+
+      const totalBillAmount = billsData
+        .filter(bill => bill.customerId === customerId)
+        .reduce((total, bill) => total + bill.billAmount, 0);
+
+      const totalAcceptedPayment = acceptedPaymentsData
+        .filter(payment => payment.customerId === customerId)
+        .reduce((total, payment) => total + payment.amountReceived, 0);
+
+      setBillDue(totalBillAmount - totalAcceptedPayment);
+    }
   };
 
   const handleAmountChange = (event) => {

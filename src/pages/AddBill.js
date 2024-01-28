@@ -1,4 +1,3 @@
-// AddBill.js
 import React, { useState, useEffect } from "react";
 import { useForm, Controller, useFieldArray } from "react-hook-form";
 import {
@@ -40,8 +39,6 @@ const AddBill = () => {
   const navigate = useNavigate();
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [customers, setCustomers] = useState([]);
-  const [items, setItems] = useState([]);
-  const [customerNames, setCustomerNames] = useState([]);
   const [itemNamesAndPrices, setItemNamesAndPrices] = useState([]);
   const [billAmount, setBillAmount] = useState(0);
 
@@ -60,21 +57,7 @@ const AddBill = () => {
           id: doc.id,
           ...doc.data(),
         }));
-        setItems(itemsData);
-
-        const customerNamesData = customersData.map((customer) => ({
-          id: customer.id,
-          name: customer.customerName,
-        }));
-        setCustomerNames(customerNamesData);
-
-        setItemNamesAndPrices(
-          itemsData.map(({ id, itemName, itemPrice }) => ({
-            id,
-            itemName,
-            itemPrice,
-          }))
-        );
+        setItemNamesAndPrices(itemsData);
       } catch (error) {
         console.error("Error fetching data: ", error);
       }
@@ -83,40 +66,45 @@ const AddBill = () => {
     fetchCustomersAndItems();
   }, []);
 
+  const handleItemChange = (index, field, value) => {
+    const updatedItems = [...fields];
+    updatedItems[index][field] = value;
+
+    // Recalculate the total bill amount
+    let totalAmount = 0;
+    updatedItems.forEach((item) => {
+      const quantity = parseFloat(item.quantity) || 0;
+      const itemId = item.itemId;
+      const selectedItem = itemNamesAndPrices.find((item) => item.id === itemId);
+      const itemPrice = parseFloat(selectedItem.itemPrice) || 0;
+      totalAmount += quantity * itemPrice;
+    });
+
+    setBillAmount(totalAmount);
+    setValue(`items`, updatedItems);
+  };
+
   const onSubmit = async (data) => {
     try {
+      // Update customer's bill amount
       const selectedCustomer = customers.find(
         (customer) => customer.id === data.customerId
       );
 
-      // Validate customerId
-      if (!data.customerId) {
-        // Handle customerId validation error
-        console.error("Customer is required");
-        return;
-      }
-
-      // Validate billAmount
-      if (billAmount <= 0) {
-        // Handle billAmount validation error
-        console.error("Bill amount must be greater than zero");
-        return;
-      }
-
-      // Update customer's bill amount
-      const newCustomerBillAmount = selectedCustomer.billAmount + billAmount;
-      await updateDoc(doc(db, "customers", selectedCustomer.id), {
-        billAmount: newCustomerBillAmount,
-      });
-
       // Create a new bill document
+      const itemsWithNames = data.items.map((item) => ({
+        ...item,
+        itemName: itemNamesAndPrices.find((i) => i.id === item.itemId).itemName,
+        itemPrice: itemNamesAndPrices.find((i) => i.id === item.itemId).itemPrice,
+      }));
+
       await addDoc(collection(db, "bills"), {
         customerId: data.customerId,
         customerName: selectedCustomer.customerName,
-        items: data.items,
+        items: itemsWithNames,
         date: serverTimestamp(),
         billAmount: billAmount,
-        transactionDateTime: serverTimestamp(), // Add date and time
+        transactionDateTime: serverTimestamp(),
       });
 
       setOpenSnackbar(true);
@@ -135,26 +123,6 @@ const AddBill = () => {
       return;
     }
     setOpenSnackbar(false);
-  };
-
-  const handleItemChange = (index, field, value) => {
-    const updatedItems = [...fields];
-    updatedItems[index][field] = value;
-
-    // Recalculate the total bill amount
-    const totalAmount = updatedItems.reduce((acc, item) => {
-      const quantity = parseFloat(item.quantity) || 0;
-      const itemId = item.itemId;
-      const selectedItem = itemNamesAndPrices.find(
-        (item) => item.id === itemId
-      );
-      const itemPrice = parseFloat(selectedItem.itemPrice) || 0;
-
-      return acc + quantity * itemPrice;
-    }, 0);
-
-    setBillAmount(totalAmount);
-    setValue(`items`, updatedItems);
   };
 
   return (
@@ -190,9 +158,9 @@ const AddBill = () => {
               rules={{ required: "Customer is required" }}
               render={({ field }) => (
                 <Select {...field} displayEmpty>
-                  {customerNames.map((customer) => (
+                  {customers.map((customer) => (
                     <MenuItem key={customer.id} value={customer.id}>
-                      {customer.name}
+                      {customer.customerName}
                     </MenuItem>
                   ))}
                 </Select>
@@ -243,44 +211,51 @@ const AddBill = () => {
               <Button
                 type="button"
                 onClick={() => remove(index)}
-                sx={{ marginLeft: 1 }}
+                sx={{ marginLeft: 2 }}
               >
-                Remove
+                Remove Item
               </Button>
             </Box>
           ))}
 
           <Button
+            type="button"
+            onClick={() => append({ itemId: "", quantity: "" })}
             variant="outlined"
-            onClick={() => {
-              append({ itemId: "", quantity: "" });
-            }}
             sx={{ marginBottom: 2 }}
           >
             Add Item
           </Button>
 
-          <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-            <Typography variant="subtitle1">Total: ${billAmount}</Typography>
-          </Box>
+          <Typography variant="h6" sx={{ marginTop: 2 }}>
+            Current Bill Amount: ${billAmount.toFixed(2)}
+          </Typography>
 
-          <Box sx={{ display: "flex", justifyContent: "center" }}>
-            <Button type="submit" variant="contained" sx={{ mt: 2 }}>
-              Save
-            </Button>
-          </Box>
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            sx={{
+              marginTop: 2,
+              backgroundColor: "black",
+              color: "white",
+              "&:hover": { backgroundColor: "#333" },
+            }}
+          >
+            Submit
+          </Button>
+
+          <Snackbar
+            open={openSnackbar}
+            autoHideDuration={6000}
+            onClose={handleCloseSnackbar}
+          >
+            <Alert onClose={handleCloseSnackbar} severity="success">
+              Bill added successfully!
+            </Alert>
+          </Snackbar>
         </form>
       </Paper>
-
-      <Snackbar
-        open={openSnackbar}
-        autoHideDuration={6000}
-        onClose={handleCloseSnackbar}
-      >
-        <Alert onClose={handleCloseSnackbar} severity="success" sx={{ width: "100%" }}>
-          Bill added successfully!
-        </Alert>
-      </Snackbar>
     </Box>
   );
 };

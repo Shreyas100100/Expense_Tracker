@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -17,35 +17,51 @@ import {
   DialogContent,
   DialogActions,
   Button,
-} from '@mui/material';
-import { collection, getDocs } from 'firebase/firestore';
-import { db } from '../firebase';
+} from "@mui/material";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../firebase";
+import { format } from "date-fns";
 
 const History = () => {
   const [bills, setBills] = useState([]);
   const [acceptedPayments, setAcceptedPayments] = useState([]);
   const [customers, setCustomers] = useState([]);
-  const [selectedCustomer, setSelectedCustomer] = useState('');
-  const [selectedMonth, setSelectedMonth] = useState('');
+  const [selectedCustomer, setSelectedCustomer] = useState("");
+  const [selectedMonth, setSelectedMonth] = useState("");
   const [customerHistory, setCustomerHistory] = useState([]);
-  const [openDialog, setOpenDialog] = useState(false);
+  const [openBillDialog, setOpenBillDialog] = useState(false);
+  const [openPaymentDialog, setOpenPaymentDialog] = useState(false);
+  const [billHistory, setBillHistory] = useState([]);
+  const [paymentHistory, setPaymentHistory] = useState([]);
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     const fetchBills = async () => {
-      const billsSnapshot = await getDocs(collection(db, 'bills'));
-      const billsData = billsSnapshot.docs.map(doc => ({ id: doc.id, type: 'bill', ...doc.data() }));
+      const billsSnapshot = await getDocs(collection(db, "bills"));
+      const billsData = billsSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
       setBills(billsData);
     };
 
     const fetchAcceptedPayments = async () => {
-      const paymentsSnapshot = await getDocs(collection(db, 'AcceptedPayments'));
-      const paymentsData = paymentsSnapshot.docs.map(doc => ({ id: doc.id, type: 'payment', ...doc.data() }));
+      const paymentsSnapshot = await getDocs(
+        collection(db, "AcceptedPayments")
+      );
+      const paymentsData = paymentsSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
       setAcceptedPayments(paymentsData);
     };
 
     const fetchCustomers = async () => {
-      const customersSnapshot = await getDocs(collection(db, 'customers'));
-      const customersData = customersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const customersSnapshot = await getDocs(collection(db, "customers"));
+      const customersData = customersSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
       setCustomers(customersData);
     };
 
@@ -54,128 +70,201 @@ const History = () => {
     fetchCustomers();
   }, []);
 
-  const handleCustomerChange = event => {
+  const handleCustomerChange = (event) => {
     setSelectedCustomer(event.target.value);
   };
 
-  const handleMonthChange = event => {
+  const handleMonthChange = (event) => {
     setSelectedMonth(event.target.value);
   };
 
-  const handleOpenDialog = customerId => {
-    const customerData = customers.find(customer => customer.id === customerId);
+  const handleOpenBillDialog = (customerId) => {
+    const customerBills = bills.filter(
+      (bill) =>
+        (selectedCustomer ? bill.customerId === selectedCustomer : true) &&
+        (selectedMonth
+          ? new Date(bill.date.seconds * 1000).getMonth() + 1 ===
+            parseInt(selectedMonth)
+          : true) &&
+        bill.customerId === customerId
+    );
 
-    const customerBills = bills
-      .filter(
-        bill =>
-          (selectedCustomer ? bill.customerId === selectedCustomer : true) &&
-          (selectedMonth
-            ? new Date(bill.date.seconds * 1000).getMonth() + 1 === parseInt(selectedMonth)
-            : true) &&
-          bill.customerId === customerId
-      );
-
-    const customerPayments = acceptedPayments.filter(payment => payment.customerId === customerId);
-
-    const customerHistoryData = [
-      ...customerBills.map(bill => ({
-        type: 'bill',
+    const billDetails = customerBills.flatMap((bill) =>
+      bill.items.map((item) => ({
         date: new Date(bill.date.seconds * 1000).toLocaleString(),
-        itemName: bill.itemName,
-        quantity: bill.quantity,
-        total: bill.billAmount.toFixed(2),
-      })),
-      ...customerPayments.map(payment => ({
-        type: 'payment',
-        date: new Date(payment.datetime.seconds * 1000).toLocaleString(),
-        itemName: 'Payment Received',
-        quantity: '1',
-        total: `-${payment.amountReceived.toFixed(2)}`,
-      })),
-    ];
+        itemName: item.itemName,
+        quantity: item.quantity,
+        itemPrice: item.itemPrice,
+        total: (item.quantity * item.itemPrice).toFixed(2),
+      }))
+    );
 
-    setCustomerHistory(customerHistoryData);
-    setOpenDialog(true);
+    setBillHistory(billDetails);
+    setOpenBillDialog(true);
   };
 
-  const handleCloseDialog = () => {
-    setOpenDialog(false);
+  const handleOpenPaymentDialog = (customerId) => {
+    const customerPayments = acceptedPayments.filter(
+      (payment) => payment.customerId === customerId
+    );
+
+    const paymentDetails = customerPayments.map((payment) => ({
+      date: new Date(payment.datetime.seconds * 1000).toLocaleString(),
+      itemName: "Payment Received",
+      quantity: "1",
+      total: `-${payment.amountReceived.toFixed(2)}`,
+    }));
+
+    setPaymentHistory(paymentDetails);
+    setOpenPaymentDialog(true);
   };
 
-  const getMonthlyTotal = customerId => {
+  const handleCloseBillDialog = () => {
+    setOpenBillDialog(false);
+  };
+
+  const handleClosePaymentDialog = () => {
+    setOpenPaymentDialog(false);
+  };
+
+  const clearFilters = () => {
+    setSelectedCustomer("");
+    setSelectedMonth("");
+  };
+
+  const getMonthlyTotal = (customerId) => {
     const monthlyTotal = bills
       .filter(
-        bill =>
+        (bill) =>
           (customerId ? bill.customerId === customerId : true) &&
           (selectedMonth
-            ? new Date(bill.date.seconds * 1000).getMonth() + 1 === parseInt(selectedMonth)
+            ? new Date(bill.date.seconds * 1000).getMonth() + 1 ===
+              parseInt(selectedMonth)
             : true)
       )
       .reduce((total, bill) => total + bill.billAmount, 0);
 
     const monthlyPayments = acceptedPayments
-      .filter(payment => payment.customerId === customerId)
-      .reduce((total, payment) => total + payment.amountReceived, 0);
+      .filter((payment) => payment.customerId === customerId)
+      .reduce((total, payment) => total - payment.amountReceived, 0);
 
     return (monthlyTotal + monthlyPayments).toFixed(2);
   };
 
   return (
-    <Box sx={{ maxWidth: 800, margin: 'auto', marginTop: 4, padding: 2, boxShadow: 1 }}>
+    <Box
+      sx={{
+        maxWidth: 800,
+        margin: "auto",
+        marginTop: 4,
+        padding: 2,
+        boxShadow: 1,
+      }}
+    >
       <Typography variant="h4">Bills History</Typography>
 
-      <FormControl fullWidth margin="normal">
-        <InputLabel>Filter by Customer</InputLabel>
-        <Select value={selectedCustomer} onChange={handleCustomerChange}>
-          <MenuItem value="">All Customers</MenuItem>
-          {customers.map(customer => (
-            <MenuItem key={customer.id} value={customer.id}>
-              {customer.customerName}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
+      <Button
+        onClick={() => setShowFilters(!showFilters)}
+        sx={{ marginBottom: 2 }}
+      >
+        {showFilters ? "Hide Filters" : "Show Filters"}
+      </Button>
 
-      <FormControl fullWidth margin="normal">
-        <InputLabel>Filter by Month</InputLabel>
-        <Select value={selectedMonth} onChange={handleMonthChange}>
-          <MenuItem value="">All Months</MenuItem>
-          {[...Array(12).keys()].map(month => (
-            <MenuItem key={month + 1} value={String(month + 1)}>
-              {new Date(2000, month, 1).toLocaleString('default', { month: 'long' })}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
+      {showFilters && (
+        <>
+          <FormControl fullWidth margin="normal">
+            <InputLabel>Filter by Customer</InputLabel>
+            <Select value={selectedCustomer} onChange={handleCustomerChange}>
+              <MenuItem value="">All Customers</MenuItem>
+              {customers.map((customer) => (
+                <MenuItem key={customer.id} value={customer.id}>
+                  {customer.customerName}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <FormControl fullWidth margin="normal">
+            <InputLabel>Filter by Month</InputLabel>
+            <Select value={selectedMonth} onChange={handleMonthChange}>
+              <MenuItem value="">All Months</MenuItem>
+              {[...Array(12).keys()].map((month) => (
+                <MenuItem key={month + 1} value={String(month + 1)}>
+                  {new Date(2000, month, 1).toLocaleString("default", {
+                    month: "long",
+                  })}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <Button onClick={clearFilters} sx={{ marginBottom: 2 }}>
+            Clear Filters
+          </Button>
+        </>
+      )}
 
       <Paper sx={{ marginTop: 2 }}>
         <Table>
           <TableHead>
             <TableRow>
               <TableCell>Customer Name</TableCell>
-              <TableCell>Month</TableCell>
-              <TableCell>Total Amount</TableCell>
-              <TableCell>View Details</TableCell>
+              <TableCell>Payment Received</TableCell>
+              <TableCell>Bill Due</TableCell>
+              <TableCell>Purchase</TableCell>
+              <TableCell></TableCell>
+              <TableCell></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {customers.map(customer => (
-              <TableRow key={customer.id}>
-                <TableCell>{customer.customerName}</TableCell>
-                <TableCell>{getMonthlyTotal(customer.id)}</TableCell>
-                <TableCell>${getMonthlyTotal(customer.id)}</TableCell>
-                <TableCell>
-                  <Button onClick={() => handleOpenDialog(customer.id)}>View Details</Button>
-                </TableCell>
-              </TableRow>
-            ))}
+            {customers.map((customer) => {
+              if (selectedCustomer && customer.id !== selectedCustomer) {
+                return null;
+              }
+
+              const monthlyTotal = getMonthlyTotal(customer.id);
+              const totalAcceptedPayments = acceptedPayments
+                .filter((payment) => payment.customerId === customer.id)
+                .reduce((total, payment) => total + payment.amountReceived, 0);
+
+              return (
+                <TableRow key={customer.id}>
+                  <TableCell>{customer.customerName}</TableCell>
+                  <TableCell>${totalAcceptedPayments.toFixed(2)}</TableCell>
+                  <TableCell>${monthlyTotal}</TableCell>
+                  <TableCell>${(
+                    parseFloat(monthlyTotal) +
+                    parseFloat(totalAcceptedPayments)
+                  ).toFixed(2)}</TableCell>
+                  <TableCell>
+                    <Button
+                      onClick={() => handleOpenBillDialog(customer.id)}
+                    >
+                      View Bill Details
+                    </Button>
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      onClick={() => handleOpenPaymentDialog(customer.id)}
+                    >
+                      View Payment Details
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </Paper>
 
-      {/* Customer History Dialog */}
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
-        <DialogTitle>Customer History</DialogTitle>
+      {/* Bill Details Dialog */}
+      <Dialog
+        open={openBillDialog}
+        onClose={handleCloseBillDialog}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>Bill Details</DialogTitle>
         <DialogContent>
           <Table>
             <TableHead>
@@ -187,19 +276,52 @@ const History = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {customerHistory.map((history, index) => (
+              {billHistory.map((bill, index) => (
                 <TableRow key={index}>
-                  <TableCell>{history.date}</TableCell>
-                  <TableCell>{history.itemName}</TableCell>
-                  <TableCell>{history.quantity}</TableCell>
-                  <TableCell>${history.total}</TableCell>
+                  <TableCell>{bill.date}</TableCell>
+                  <TableCell>{bill.itemName}</TableCell>
+                  <TableCell>{bill.quantity}</TableCell>
+                  <TableCell>${bill.total}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog}>Close</Button>
+          <Button onClick={handleCloseBillDialog}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Payment Details Dialog */}
+      <Dialog
+        open={openPaymentDialog}
+        onClose={handleClosePaymentDialog}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>Payment Details</DialogTitle>
+        <DialogContent>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Date & Time</TableCell>
+                <TableCell>Item Name</TableCell>
+                <TableCell>Amount Recieved</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {paymentHistory.map((payment, index) => (
+                <TableRow key={index}>
+                  <TableCell>{payment.date}</TableCell>
+                  <TableCell>{payment.itemName}</TableCell>
+                  <TableCell>${payment.total*-1}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClosePaymentDialog}>Close</Button>
         </DialogActions>
       </Dialog>
     </Box>
