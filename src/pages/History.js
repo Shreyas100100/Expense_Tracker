@@ -230,9 +230,9 @@ const History = () => {
               return (
                 <TableRow key={customer.id}>
                   <TableCell>{customer.customerName}</TableCell>
-                  <TableCell>${totalAcceptedPayments.toFixed(2)}</TableCell>
-                  <TableCell>${monthlyTotal}</TableCell>
-                  <TableCell>${(
+                  <TableCell>₹{totalAcceptedPayments.toFixed(2)}</TableCell>
+                  <TableCell>₹{monthlyTotal}</TableCell>
+                  <TableCell>₹{(
                     parseFloat(monthlyTotal) +
                     parseFloat(totalAcceptedPayments)
                   ).toFixed(2)}</TableCell>
@@ -281,7 +281,7 @@ const History = () => {
                   <TableCell>{bill.date}</TableCell>
                   <TableCell>{bill.itemName}</TableCell>
                   <TableCell>{bill.quantity}</TableCell>
-                  <TableCell>${bill.total}</TableCell>
+                  <TableCell>₹{bill.total}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

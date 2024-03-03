@@ -3,9 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Navbar from './components/Navbar';
 import AddUsers from './pages/AddUsers';
 import Blog from './pages/Blog';
-import AddMenu from './pages/AddItems';
 import AddBill from './pages/AddBill';
-import History from './pages/History';
 import Customers from './pages/Customers';
 import Login from './components/Login';
 import Signup from './components/Signup';
@@ -13,17 +11,9 @@ import { auth } from './firebase';
 import AddItems from './pages/AddItems';
 import Menu from './pages/Menu';
 import Bills from './pages/Bills';
-import TodayBills from './pages/TodayBills';
 import Payment from './pages/Payment';
+import Home from './pages/Home';
 
-function Home() {
-  return (
-    <div>
-      <h2>Welcome to the Home Page</h2>
-      {/* Add any content for the home page */}
-    </div>
-  );
-}
 
 function App() {
   const [user, setUser] = useState(null);
@@ -55,13 +45,12 @@ function App() {
                     <Route path="/addusers" element={<AddUsers />} />
                     <Route path="/payment" element={<Payment />} />
                     <Route path="/bills" element={<Bills />} />
-                    <Route path="/todaybills" element={<TodayBills />} />
                     <Route path="/menu" element={<Menu />} />
                     <Route path="/additems" element={<AddItems />} />
                     <Route path="/addbill" element={<AddBill />} />
-                    <Route path="/history" element={<History />} />
                     <Route path="/blog" element={<Blog />} />
                     <Route path="/customers" element={<Customers />} />
+                    <Route path="/home" element={<Home />}/>
                     <Route path="/*" element={<Navigate to="/" />} />
                   </Routes>
                 </>

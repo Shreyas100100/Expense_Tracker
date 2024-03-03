@@ -13,8 +13,8 @@ import Tooltip from "@mui/material/Tooltip";
 import MenuItem from "@mui/material/MenuItem";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuthState } from 'react-firebase-hooks/auth';
-import { auth } from '../firebase';
+import { useAuthState } from "react-firebase-hooks/auth";
+import { auth } from "../firebase";
 
 const darkTheme = createTheme({
   palette: {
@@ -52,7 +52,7 @@ export default function Navbar() {
       <AppBar position="static">
         <Container maxWidth="xl">
           <Toolbar disableGutters>
-          <Typography
+            <Typography
               variant="h6"
               noWrap
               component={Link}
@@ -105,10 +105,10 @@ export default function Navbar() {
                 </MenuItem>
                 <MenuItem
                   component={Link}
-                  to="/AddMenu"
+                  to="/AddItems"
                   onClick={handleCloseNavMenu}
                 >
-                  <Typography textAlign="center">Add Menu</Typography>
+                  <Typography textAlign="center">Add Items</Typography>
                 </MenuItem>
                 <MenuItem
                   component={Link}
@@ -119,10 +119,10 @@ export default function Navbar() {
                 </MenuItem>
                 <MenuItem
                   component={Link}
-                  to="/History"
+                  to="/Bills"
                   onClick={handleCloseNavMenu}
                 >
-                  <Typography textAlign="center">History</Typography>
+                  <Typography textAlign="center">Bills</Typography>
                 </MenuItem>
                 <MenuItem
                   component={Link}
@@ -130,6 +130,13 @@ export default function Navbar() {
                   onClick={handleCloseNavMenu}
                 >
                   <Typography textAlign="center">Customers</Typography>
+                </MenuItem>
+                <MenuItem
+                  component={Link}
+                  to="/Payment"
+                  onClick={handleCloseNavMenu}
+                >
+                  <Typography textAlign="center">Payment</Typography>
                 </MenuItem>
               </Menu>
             </Box>
@@ -163,27 +170,13 @@ export default function Navbar() {
               >
                 Add Bill
               </Button>
-              <Button
-                component={Link}
-                to="/History"
-                sx={{ my: 2, color: "white", display: "block" }}
-              >
-                History
-              </Button>
-              <Button
-                component={Link}
-                to="/todaybills"
-                sx={{ my: 2, color: "white", display: "block" }}
-              >
-                Today Bills
-              </Button>
 
               <Button
                 component={Link}
                 to="/bills"
                 sx={{ my: 2, color: "white", display: "block" }}
               >
-                 Bills
+                Bills
               </Button>
               <Button
                 component={Link}

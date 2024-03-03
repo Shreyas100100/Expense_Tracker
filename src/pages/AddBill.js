@@ -203,10 +203,12 @@ const AddBill = () => {
                   inputMode: "numeric",
                   pattern: "[0-9]*",
                 }}
+                disabled={!item.itemId}
               />
               {parseFloat(item.quantity) < 0 && (
                 <Typography color="red">Quantity cannot be negative</Typography>
               )}
+
 
               <Button
                 type="button"
@@ -228,7 +230,7 @@ const AddBill = () => {
           </Button>
 
           <Typography variant="h6" sx={{ marginTop: 2 }}>
-            Current Bill Amount: ${billAmount.toFixed(2)}
+            Current Bill Amount: ₹{billAmount.toFixed(2)}
           </Typography>
 
           <Button
